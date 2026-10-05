@@ -1,0 +1,13 @@
+name: Feature request
+description: Explain a participant problem
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Who needs help, and what are they trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What useful result should change?

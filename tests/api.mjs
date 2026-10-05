@@ -1,0 +1,19 @@
+import {build} from 'esbuild';
+import {Miniflare} from 'miniflare';
+import fs from 'node:fs';import assert from 'node:assert/strict';import path from 'node:path';
+const root=process.cwd();
+const built=await build({stdin:{contents:`import {GET,POST} from '${root}/app/api/projects/route.ts';export default {async fetch(request){globalThis.__testUser=request.headers.get('test-user');return request.method==='GET'?GET(request):POST(request)}}`,resolveDir:root,sourcefile:'test-entry.ts'},bundle:true,format:'esm',platform:'neutral',write:false,external:['cloudflare:workers'],plugins:[{name:'test-auth',setup(b){b.onResolve({filter:/chatgpt-auth$/},()=>({path:'test-auth',namespace:'test'}));b.onLoad({filter:/.*/,namespace:'test'},()=>({contents:`export async function getChatGPTUser(){const id=globalThis.__testUser;return id?{userId:id,displayName:id,email:id+'@test.invalid'}:null}`,loader:'js'}))}}]});
+const mf=new Miniflare({modules:true,script:built.outputFiles[0].text,compatibilityDate:'2026-05-15',d1Databases:['DB']});
+try{const db=await mf.getD1Database('DB');const migration=fs.readFileSync(path.join(root,'drizzle/0000_lying_dreadnoughts.sql'),'utf8');for(const sql of migration.split('--> statement-breakpoint'))await db.prepare(sql.trim()).run();
+async function req(user,body,id){const res=await mf.dispatchFetch('https://test.local/api/projects'+(id?'?id='+id:''),{method:body?'POST':'GET',headers:{...(user?{'test-user':user}:{}),...(body?{'Content-Type':'application/json','Origin':'https://test.local'}:{})},body:body?JSON.stringify(body):undefined});return {status:res.status,data:await res.json()}}
+assert.equal((await req(null)).status,401);assert.equal((await req(null,{action:'create'})).status,401);const cross=await mf.dispatchFetch('https://test.local/api/projects',{method:'POST',headers:{'test-user':'alice','Origin':'https://evil.invalid','Content-Type':'application/json'},body:'{}'});assert.equal(cross.status,403);assert.equal((await req('alice',null)).status,200);
+const document={brief:{user:'Beginners',problem:'Unclear next task',flow:'Plan, build, submit',measure:'Missing items'},timing:{start:1,idea:2,final:3},tasks:[{id:0,title:'Test demo',owner:'Alice',core:true,status:'Pending',due:'',doneWhen:'Three cases pass'}],requirements:[{title:'Demo',owner:'Bob',url:'',done:false}],rules:'Three minute pitch'};
+const created=await req('alice',{action:'create',name:'Team A',document});assert.equal(created.status,201);const {project,inviteCode}=created.data;assert.equal((await req('bob',null,project.id)).status,404);assert.equal((await req('bob',{action:'save',id:project.id,revision:1,document})).status,404);
+assert.equal((await req('bob',{action:'join',code:inviteCode})).status,200);assert.equal((await req('bob',null,project.id)).data.project.document.rules,'Three minute pitch');
+assert.equal((await req('bob',{action:'invite',id:project.id})).status,403);
+const updated=structuredClone(document);updated.tasks[0].status='Done';const saved=await req('bob',{action:'save',id:project.id,revision:1,document:updated});assert.equal(saved.status,200);assert.equal(saved.data.project.revision,2);
+assert.equal((await req('alice',{action:'save',id:project.id,revision:1,document})).status,409);assert.equal((await req('alice',null,project.id)).data.project.document.tasks[0].status,'Done');
+assert.equal((await req('alice',{action:'save',id:project.id,revision:2,document:{...document,timing:{start:3,idea:2,final:1}}})).status,400);
+const rotated=await req('alice',{action:'invite',id:project.id});assert.equal(rotated.status,200);assert.equal((await req('charlie',{action:'join',code:inviteCode})).status,404);assert.equal((await req('charlie',{action:'join',code:rotated.data.inviteCode})).status,200);
+console.log('PASS: create, reload, membership, join, shared save, conflict protection, timing validation and invite rotation on real local D1.');
+}finally{await mf.dispose()}
