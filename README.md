@@ -1,10 +1,45 @@
 # Hackathon Mission Control
 
+![HTML5](https://img.shields.io/badge/Frontend-HTML5-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/Styles-CSS3-1572B6?logo=css&logoColor=white)
+![JavaScript](https://img.shields.io/badge/Frontend-JavaScript-F7DF1E?logo=javascript&logoColor=black)
+![TypeScript](https://img.shields.io/badge/Backend-TypeScript-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Build-Vite-646CFF?logo=vite&logoColor=white)
+![Cloudflare Workers](https://img.shields.io/badge/Runtime-Cloudflare_Workers-F38020?logo=cloudflare&logoColor=white)
+![Cloudflare D1](https://img.shields.io/badge/Database-Cloudflare_D1-F38020?logo=cloudflare&logoColor=white)
+![Drizzle](https://img.shields.io/badge/Schema-Drizzle-C5F74F?logo=drizzle&logoColor=black)
+![Zod](https://img.shields.io/badge/Validation-Zod-3E67B1?logo=zod&logoColor=white)
+![Transformers.js](https://img.shields.io/badge/Experimental_AI-Transformers.js-FFD21E?logo=huggingface&logoColor=black)
+[![Checks](https://github.com/SHIVASAI234/Hackathon-Mission-Control./actions/workflows/ci.yml/badge.svg)](https://github.com/SHIVASAI234/Hackathon-Mission-Control./actions/workflows/ci.yml)
+[![MIT licence](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+**Stack at a glance:** HTML/CSS/JavaScript frontend → TypeScript API → Cloudflare D1. Hosted on Cloudflare Workers through Sites, with ChatGPT identity and server-side project authorization.
+
+[Tech stack](#tech-stack) · [Architecture](#architecture) · [Database schema](db/schema.ts) · [Security](SECURITY.md) · [Local setup](#run-locally)
+
 A workspace that helps first-time participants and hackathon teams turn an idea into a complete submission. It combines preparation, task ownership, deadlines, scope recovery and pitch preparation.
 
 [Live application](https://hackathon-mission-control-shiva.shivasaichavala777.chatgpt.site) · [Guided demo — no sign-in](https://hackathon-mission-control-shiva.shivasaichavala777.chatgpt.site/?demo=guided)
 
 **Stage:** public pilot. Practical value has not yet been measured with real teams. Browser visual QA, end-to-end hosted sign-in and local model inference are not verified.
+
+## Tech stack
+
+| Responsibility | Implementation |
+|---|---|
+| Interface | HTML, CSS and vanilla JavaScript |
+| Request handling | TypeScript route handlers using Vinext/Vite and the retained Sites starter |
+| Hosted runtime | Cloudflare Workers through Sites |
+| Durable data | Cloudflare D1, with Drizzle-generated SQL migrations |
+| Validation | Zod |
+| Identity | Dispatch-owned ChatGPT sign-in and trusted identity headers |
+| Authorization and security | Server-side membership checks, owner-only join-code rotation, hashed join codes, CSP and revision-based save conflicts |
+| Guidance | Deterministic rules using task state and time remaining |
+| Optional AI | Transformers.js 3.8.1, ONNX Runtime, Xenova/flan-t5-small |
+| Tests | Node.js assertions, Miniflare D1 and jsdom |
+| Packages | pnpm 11.25.0 with a committed lockfile |
+
+The starter contains React and UI libraries; the current interface is HTML/JavaScript served by `app/route.ts`, rather than a React component dashboard.
 
 ## Why this exists
 
@@ -27,23 +62,6 @@ Read the [ideation brief](docs/ideation.md), [PRD](docs/prd.md), [architecture](
 **Simulations:** Google sign-in buttons, platform connections, member invitations in the integration practice panel, and social publishing. These do not connect external accounts or publish posts. Real project access uses ChatGPT sign-in and project join codes.
 
 **Experimental:** an optional browser worker uses FLAN-T5 Small to shorten text. It downloads model/runtime files and requires a compatible browser and network. A structured pitch remains available without AI.
-
-## Tech stack
-
-| Responsibility | Implementation |
-|---|---|
-| Interface | HTML, CSS and vanilla JavaScript |
-| Request handling | TypeScript route handlers using Vinext/Vite and the retained Sites starter |
-| Hosted runtime | Cloudflare Workers through Sites |
-| Durable data | Cloudflare D1, with Drizzle-generated SQL migrations |
-| Validation | Zod |
-| Identity | Dispatch-owned ChatGPT sign-in and trusted identity headers |
-| Guidance | Deterministic rules using task state and time remaining |
-| Optional AI | Transformers.js 3.8.1, ONNX Runtime, Xenova/flan-t5-small |
-| Tests | Node.js assertions, Miniflare D1 and jsdom |
-| Packages | pnpm 11.25.0 with a committed lockfile |
-
-The starter contains React and UI libraries; the current interface is HTML/JavaScript served by `app/route.ts`, rather than a React component dashboard.
 
 ## Architecture
 
